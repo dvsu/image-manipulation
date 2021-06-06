@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 import os
 from PIL import Image
 
@@ -8,7 +10,7 @@ class ImageManipulation:
         self.__source_dir = source_dir
         self.__output_dir = output_dir
         self.__target_extension = target_extension
-        self.__recognized_extensions = [".jpg", ".jpeg", ".png", ".bmp"]
+        self.__recognized_extensions = ["", "jpg", "jpeg", "png", "bmp"]
         self._directory_check()
         self._extension_check()
 
@@ -31,15 +33,18 @@ class ImageManipulation:
     def _rotate(self, img: Image, degrees: int) -> Image:
         return img.rotate(degrees)
 
+    def _resize(self, img: Image, target_size: tuple) -> Image:
+        return img.resize(target_size)
+
     def _resize_percent(self, img: Image, resize_percent_width: int, resize_percent_length: int) -> Image:
         return img.resize((resize_percent_width, resize_percent_length))
 
-    def transform(self, rotate: int = 0, resize_percent: int = 0) -> None:
+    def transform(self, rotate: int = 0, resize: tuple = (), resize_percent: int = 0) -> None:
 
         for file in os.listdir(self.__source_dir):
             filename, file_ext = os.path.splitext(file)
 
-            if file_ext != self.__target_extension:
+            if file_ext.replace(".", "") not in self.__recognized_extensions:
                 continue
 
             with Image.open(f"{self.__source_dir}/{file}") as img:
@@ -51,11 +56,16 @@ class ImageManipulation:
                     img = self._resize_percent(img=img, resize_percent_width=int(
                         width*resize_percent/100), resize_percent_length=int(length*resize_percent/100))
 
-                img.save(
-                    f"{self.__output_dir}/{filename}_resized{self.__target_extension}")
+                if resize:
+                    if len(resize) != 2:
+                        raise TypeError("resize has to be in '(width,length)'")
+                    img = self._resize(img=img, target_size=resize)
+
+                img.convert("RGB").save(
+                    f"{self.__output_dir}/{filename}.{self.__target_extension}", self.__target_extension.upper(), quality=100)
 
 
-im = ImageManipulation(source_dir='D:/path/to/source/dir',
-                       output_dir='D:/path/to/source/dir/output', target_extension=".jpg")
+im = ImageManipulation(source_dir='path/to/source',
+                       output_dir='path/to/output', target_extension="jpeg")
 
-im.transform(resize_percent=50)
+im.transform(resize=(1080, 720))
